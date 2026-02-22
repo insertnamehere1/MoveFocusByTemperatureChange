@@ -1,6 +1,7 @@
 ﻿using Namotion.Reflection;
 using Newtonsoft.Json;
 using NINA.Core.Model;
+using NINA.Core.Utility;
 using NINA.Core.Utility.Notification;
 using NINA.Equipment.Equipment.MyGuider;
 using NINA.Equipment.Interfaces.Mediator;
@@ -8,6 +9,7 @@ using NINA.Sequencer.Container;
 using NINA.Sequencer.SequenceItem;
 using NINA.Sequencer.Trigger;
 using NINA.Sequencer.Validations;
+using NINA.WPF.Base.Mediator;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
@@ -16,11 +18,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ChrisDowd.NINA.MoveFocusAfterTempChange.MoveFocusAfterTempChangeTestCategory {
+    namespace ChrisDowd.NINA.MoveFocusAfterTempChange.MoveFocusAfterTempChangeTestCategory {
     [ExportMetadata("Name", "Move Focus after ΔTemperature")]
     [ExportMetadata("Description", "This trigger will move focus based on temperature change when a set temperature change occurs")]
-    [ExportMetadata("Icon", "Plugin_Test_SVG")]
-    [ExportMetadata("Category", "Utility")]
+    [ExportMetadata("Icon", "MoveFocuserByTemperatureSVG")]
+    [ExportMetadata("Category", "Lbl_SequenceCategory_Focuser")]
     [Export(typeof(ISequenceTrigger))]
     [JsonObject(MemberSerialization.OptIn)]
     public class MoveFocusAfterTempChangeTrigger : SequenceTrigger, IValidatable {
@@ -37,7 +39,6 @@ namespace ChrisDowd.NINA.MoveFocusAfterTempChange.MoveFocusAfterTempChangeTestCa
 
         // Runtime state (not persisted, as requested)
         private double lastTemperature = double.NaN;
-        private double absoluteRemainder = 0.0;
         private double relativeRemainder = 0.0;
 
         // Debug/diagnostics
@@ -101,23 +102,24 @@ namespace ChrisDowd.NINA.MoveFocusAfterTempChange.MoveFocusAfterTempChangeTestCa
             ISequenceContainer context,
             IProgress<ApplicationStatus> progress,
             CancellationToken token) {
+
             var focuserInfo = focuser?.GetInfo();
 
             if (focuserInfo == null || !focuserInfo.Connected) {
-                Notification.ShowError("Focuser is not connected.");
+                Logger.Error("Focuser is not connected.");
                 return;
             }
 
             var guiderInfo = guider?.GetInfo();
 
             if (guiderInfo == null || !guiderInfo.Connected) {
-                Notification.ShowError("Guider is not connected.");
+                Logger.Error("Guider is not connected.");
                 return;
             }
 
             double currentTemp = focuserInfo.Temperature;
             if (double.IsNaN(currentTemp) || double.IsInfinity(currentTemp)) {
-                Notification.ShowError("Focuser temperature is not available.");
+                Logger.Error("Focuser temperature is not available.");
                 return;
             }
 
@@ -134,16 +136,12 @@ namespace ChrisDowd.NINA.MoveFocusAfterTempChange.MoveFocusAfterTempChangeTestCa
                     // Absolute target position: position = m*T + b
                     double exactPosition = (currentTemp * Slope) + Intercept;
 
-                    // Carry forward fractional remainder
-                    exactPosition += absoluteRemainder;
-
                     if (exactPosition > int.MaxValue || exactPosition < int.MinValue) {
-                        Notification.ShowError("Calculated focuser position is out of range.");
+                        Logger.Error("Calculated focuser position is out of range.");
                         return;
                     }
 
                     int intPosition = (int)Math.Round(exactPosition, MidpointRounding.AwayFromZero);
-                    absoluteRemainder = exactPosition - intPosition;
 
                     // If we can read current position, avoid needless guiding interruption and moves
                     int? currentPosition = null;
@@ -166,42 +164,27 @@ namespace ChrisDowd.NINA.MoveFocusAfterTempChange.MoveFocusAfterTempChangeTestCa
 
                     // For absolute mode, lastTemperature baseline can move forward too
                     lastTemperature = currentTemp;
-                } else {
-                    double tempDelta = currentTemp - lastTemperature;
-
-                    // Exact relative move in double
-                    double exactSteps = (tempDelta * Slope) + relativeRemainder;
-
-                    if (exactSteps > int.MaxValue || exactSteps < int.MinValue) {
-                        Notification.ShowError("Calculated focuser steps are out of range.");
-                        return;
-                    }
-
-                    int intSteps = (int)Math.Round(exactSteps, MidpointRounding.AwayFromZero);
-                    relativeRemainder = exactSteps - intSteps;
-
-                    if (intSteps == 0) {
-                        // Update baseline so we do not keep triggering on the same delta
-                        lastTemperature = currentTemp;
-                        return;
-                    }
-
+                } 
+                else 
+                {
                     await guider.StopGuiding(token);
                     guidingStopped = true;
 
-                    await focuser.MoveFocuserRelative(intSteps, token);
+                    await focuser.MoveFocuserByTemperatureRelative(focuserInfo.Temperature, Slope, token);
 
                     // Update baseline after applying the move
                     lastTemperature = currentTemp;
                 }
 
-                Notification.ShowSuccess("Temperature compensation applied.");
+                Logger.Info("Temperature compensation applied.");
             } finally {
                 if (guidingStopped)
                     await guider.StartGuiding(false, null, token);
 
                 UpdateCount = UpdateCount + 1;
             }
+
+            return;
         }
 
         public override string ToString() {
