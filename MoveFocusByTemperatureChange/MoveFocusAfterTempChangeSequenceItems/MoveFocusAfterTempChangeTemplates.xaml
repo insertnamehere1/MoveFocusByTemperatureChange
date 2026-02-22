@@ -136,7 +136,7 @@
                     
                     <TextBlock Grid.Column="21"
 		                VerticalAlignment="Center"
-                        Text="{Binding UpdateCount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        Text="{Binding UpdateCount}"/>
 
                 </Grid>
             </nina:SequenceBlockView.SequenceItemContent>
