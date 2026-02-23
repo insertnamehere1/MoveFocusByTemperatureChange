@@ -52,8 +52,8 @@
                         <ColumnDefinition Width="Auto"/> <!-- Intercept textbox -->
                         <ColumnDefinition Width="Auto"/>
 
-                        <!-- gap -->
-                        <ColumnDefinition Width="100"/>
+                        <!-- push trailing indicator content to the right edge -->
+                        <ColumnDefinition Width="*"/>
 
                         <!-- Adjust Count -->
                         <ColumnDefinition Width="Auto"/>
@@ -132,10 +132,13 @@
                     <!-- Adjust Count -->
                     <TextBlock Grid.Column="19"
 			            Text="Adjust. Count:"
-			            VerticalAlignment="Center"/>
+			            VerticalAlignment="Center"
+                        HorizontalAlignment="Right"/>
                     
                     <TextBlock Grid.Column="21"
+                        Margin="6,0,0,0"
 		                VerticalAlignment="Center"
+                        HorizontalAlignment="Right"
                         Text="{Binding UpdateCount}"/>
 
                 </Grid>
