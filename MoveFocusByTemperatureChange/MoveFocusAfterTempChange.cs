@@ -30,7 +30,6 @@ namespace ChrisDowd.NINA.MoveFocusAfterTempChange {
     public class MoveFocusAfterTempChange : PluginBase, INotifyPropertyChanged {
         private readonly IPluginOptionsAccessor pluginSettings;
         private readonly IProfileService profileService;
-        private readonly IImageSaveMediator imageSaveMediator;
 
         // Implementing a file pattern
         private readonly ImagePattern exampleImagePattern = new ImagePattern("$$EXAMPLEPATTERN$$", "An example of an image pattern implementation", "Move Focus after Temp Change");
@@ -49,13 +48,6 @@ namespace ChrisDowd.NINA.MoveFocusAfterTempChange {
             // React on a changed profile
             profileService.ProfileChanged += ProfileService_ProfileChanged;
 
-            // Hook into image saving for adding FITS keywords or image file patterns
-            this.imageSaveMediator = imageSaveMediator;
-
-            // Run these handlers when an image is being saved
-            this.imageSaveMediator.BeforeImageSaved += ImageSaveMediator_BeforeImageSaved;
-            this.imageSaveMediator.BeforeFinalizeImageSaved += ImageSaveMediator_BeforeFinalizeImageSaved;
-
             // Register a new image file pattern for the Options > Imaging > File Patterns area
             options.AddImagePattern(exampleImagePattern);
         }
@@ -63,52 +55,12 @@ namespace ChrisDowd.NINA.MoveFocusAfterTempChange {
         public override Task Teardown() {
             // Make sure to unregister an event when the object is no longer in use. Otherwise garbage collection will be prevented.
             profileService.ProfileChanged -= ProfileService_ProfileChanged;
-            imageSaveMediator.BeforeImageSaved -= ImageSaveMediator_BeforeImageSaved;
-            imageSaveMediator.BeforeFinalizeImageSaved -= ImageSaveMediator_BeforeFinalizeImageSaved;
-
             return base.Teardown();
         }
 
         private void ProfileService_ProfileChanged(object sender, EventArgs e) {
             // Rase the event that this profile specific value has been changed due to the profile switch
             RaisePropertyChanged(nameof(ProfileSpecificNotificationMessage));
-        }
-
-        private Task ImageSaveMediator_BeforeImageSaved(object sender, BeforeImageSavedEventArgs e) {
-            // Insert the example FITS keyword of a specific data type into the image metadata object prior to the file being saved
-            // FITS keywords have a maximum of 8 characters. Comments are options. Comments that are too long will be truncated.
-
-            string exampleKeywordComment = "This is a {0} keyword";
-
-            // string
-            string exampleStringKeywordName = "STRKEYWD";
-            string exampleStringKeywordValue = "Example";
-            e.Image.MetaData.GenericHeaders.Add(new StringMetaDataHeader(exampleStringKeywordName, exampleStringKeywordValue, string.Format(exampleKeywordComment, "string")));
-
-            // integer
-            string exampleIntKeywordName = "INTKEYWD";
-            int exampleIntKeywordValue = 5;
-            e.Image.MetaData.GenericHeaders.Add(new IntMetaDataHeader(exampleIntKeywordName, exampleIntKeywordValue, string.Format(exampleKeywordComment, "integer")));
-
-            // double
-            string exampleDoubleKeywordName = "DBLKEYWD";
-            double exampleDoubleKeywordValue = 1.3d;
-            e.Image.MetaData.GenericHeaders.Add(new DoubleMetaDataHeader(exampleDoubleKeywordName, exampleDoubleKeywordValue, string.Format(exampleKeywordComment, "double")));
-
-            // Classes also exist for other data types:
-            // BoolMetaDataHeader()
-            // DateTimeMetaDataHeader()
-
-            return Task.CompletedTask;
-        }
-
-        private Task ImageSaveMediator_BeforeFinalizeImageSaved(object sender, BeforeFinalizeImageSavedEventArgs e) {
-            // Populate the example image pattern with data. This can provide data that may not be immediately available
-            e.AddImagePattern(new ImagePattern(exampleImagePattern.Key, exampleImagePattern.Description, exampleImagePattern.Category) {
-                Value = $"{DateTime.Now:yyyy-MM-ddTHH:mm:ss.ffffffK}"
-            });
-
-            return Task.CompletedTask;
         }
 
         public string DefaultNotificationMessage {

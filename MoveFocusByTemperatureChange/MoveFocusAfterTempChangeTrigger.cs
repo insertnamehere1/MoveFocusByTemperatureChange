@@ -39,7 +39,6 @@ using System.Threading.Tasks;
 
         // Runtime state (not persisted, as requested)
         private double lastTemperature = double.NaN;
-        private double relativeRemainder = 0.0;
 
         // Debug/diagnostics
         private int updateCount = 0;
