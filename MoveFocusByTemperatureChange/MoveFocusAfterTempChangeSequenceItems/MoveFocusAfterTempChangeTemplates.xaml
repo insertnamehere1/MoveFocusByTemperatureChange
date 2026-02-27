@@ -16,7 +16,6 @@
     <DataTemplate DataType="{x:Type local:MoveFocusAfterTempChangeTrigger}">
         <nina:SequenceBlockView DataContext="{Binding}">
             <nina:SequenceBlockView.SequenceItemContent>
-
                 <Grid VerticalAlignment="Center" Margin="0,4">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="5"/>
@@ -131,7 +130,7 @@
 
                     <!-- Adjust Count -->
                     <TextBlock Grid.Column="19"
-			            Text="Adjust. Count:"
+			            Text="Focus Moves:"
 			            VerticalAlignment="Center"
                         HorizontalAlignment="Right"/>
                     
@@ -145,4 +144,24 @@
             </nina:SequenceBlockView.SequenceItemContent>
         </nina:SequenceBlockView>
     </DataTemplate>
+
+
+
+    <DataTemplate x:Key="ChrisDowd.NINA.MoveFocusAfterTempChange.MoveFocusAfterTempChangeTestCategory.MoveFocusAfterTempChangeTrigger_Mini">
+        <mini:MiniTrigger>
+            <mini:MiniTrigger.TriggerProgressContent>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Focus Moves:" 
+                               HorizontalAlignment="Right"
+                               VerticalAlignment="Center" />
+                    <TextBlock Margin="4,0,0,0"
+                               HorizontalAlignment="Right"
+                               Text="{Binding UpdateCount}"
+                               VerticalAlignment="Center" />
+                </StackPanel>
+            </mini:MiniTrigger.TriggerProgressContent>
+        </mini:MiniTrigger>
+    </DataTemplate>
+
+
 </ResourceDictionary>

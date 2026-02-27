@@ -22,7 +22,7 @@ using System.Threading.Tasks;
     [ExportMetadata("Name", "Move Focus after ΔTemperature")]
     [ExportMetadata("Description", "This trigger will move focus based on temperature change when a set temperature change occurs")]
     [ExportMetadata("Icon", "MoveFocuserByTemperatureSVG")]
-    [ExportMetadata("Category", "Lbl_SequenceCategory_Focuser")]
+    [ExportMetadata("Category", "Focuser")]
     [Export(typeof(ISequenceTrigger))]
     [JsonObject(MemberSerialization.OptIn)]
     public class MoveFocusAfterTempChangeTrigger : SequenceTrigger, IValidatable {
